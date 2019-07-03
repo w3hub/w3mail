@@ -9,10 +9,15 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -33,7 +38,13 @@ var (
 )
 
 func init() {
-	ModuleBasics = module.NewBasicManager()
+	ModuleBasics = module.NewBasicManager(
+		auth.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+		distribution.AppModuleBasic{},
+	)
 }
 
 // ServiceApp .
@@ -41,7 +52,17 @@ type ServiceApp struct {
 	*baseapp.BaseApp
 	cdc *codec.Codec
 
-	keyMain *sdk.KVStoreKey
+	keyMain    *sdk.KVStoreKey
+	keyParams  *sdk.KVStoreKey
+	tkeyParams *sdk.TransientStoreKey
+
+	accountKeeper       auth.AccountKeeper
+	bankKeeper          bank.Keeper
+	stakingKeeper       staking.Keeper
+	slashingKeeper      slashing.Keeper
+	distrKeeper         distribution.Keeper
+	feeCollectionKeeper auth.FeeCollectionKeeper
+	paramsKeeper        params.Keeper
 }
 
 // MakeCodec custom tx codec
@@ -62,10 +83,14 @@ func NewW3MailServiceApp(logger log.Logger, db dbm.DB) *ServiceApp {
 	bApp := baseapp.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc))
 
 	app := &ServiceApp{
-		BaseApp: bApp,
-		cdc:     cdc,
-		keyMain: sdk.NewKVStoreKey(baseapp.MainStoreKey),
+		BaseApp:    bApp,
+		cdc:        cdc,
+		keyMain:    sdk.NewKVStoreKey(baseapp.MainStoreKey),
+		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
+		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 	}
+
+	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams, params.DefaultCodespace)
 
 	return app
 }
