@@ -1,0 +1,1 @@
+go build  -o .\.build\w3mail.exe .\cmd\w3mail && .\.build\w3mail.exe  %*

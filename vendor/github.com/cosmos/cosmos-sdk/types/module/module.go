@@ -255,6 +255,9 @@ func (m *Manager) InitGenesis(ctx sdk.Context, genesisData map[string]json.RawMe
 		if genesisData[moduleName] == nil {
 			continue
 		}
+
+		println("init genesis",moduleName)
+
 		moduleValUpdates := m.Modules[moduleName].InitGenesis(ctx, genesisData[moduleName])
 
 		// use these validator updates if provided, the module manager assumes

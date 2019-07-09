@@ -1,0 +1,1 @@
+go build  -o .\.build\w3mcli.exe .\cmd\w3mcli && .\.build\w3mcli.exe  %*
